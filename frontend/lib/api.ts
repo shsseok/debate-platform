@@ -1,23 +1,23 @@
 import axios from 'axios'
-import { supabase } from './supabase'
+import { useAuthStore } from '@/store/authStore'
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
 })
 
-api.interceptors.request.use(async (config) => {
-  const { data: { session } } = await supabase.auth.getSession()
-  if (session?.access_token) {
-    config.headers.Authorization = `Bearer ${session.access_token}`
+api.interceptors.request.use((config) => {
+  const token = useAuthStore.getState().token
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
   }
   return config
 })
 
 api.interceptors.response.use(
   (response) => response,
-  async (error) => {
+  (error) => {
     if (error.response?.status === 401) {
-      await supabase.auth.signOut()
+      useAuthStore.getState().clearAuth()
       window.location.href = '/login'
     }
     return Promise.reject(error)
