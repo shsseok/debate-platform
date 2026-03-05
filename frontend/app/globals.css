@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: #0f0f13;
+    color: #f4f4f5;
+    font-family: 'Pretendard', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #1a1a24;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #2a2a3a;
+    border-radius: 3px;
+  }
+}
+
+@layer components {
+  .debate-card {
+    @apply bg-surface border border-border rounded-xl p-4 transition-all duration-200 hover:border-primary/50;
+  }
+
+  .pro-gradient {
+    @apply bg-gradient-to-r from-pro to-blue-700;
+  }
+
+  .con-gradient {
+    @apply bg-gradient-to-r from-con to-red-700;
+  }
+}
