@@ -1,31 +1,69 @@
 'use client'
 
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useEffect } from 'react'
 import { getGoogleLoginUrl, getKakaoLoginUrl } from '@/lib/auth'
 
 export default function LoginPage() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const returnUrl = searchParams.get('returnUrl')
+
+  // returnUrl을 localStorage에 저장 (OAuth 리다이렉트 후 복원용)
+  useEffect(() => {
+    if (returnUrl) {
+      localStorage.setItem('returnUrl', returnUrl)
+    }
+  }, [returnUrl])
+
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center gap-6 bg-gray-50">
-      <h1 className="text-3xl font-bold text-gray-900">토론 대결 플랫폼</h1>
-      <p className="text-gray-500">소셜 계정으로 시작하세요</p>
+    <div className="min-h-[70vh] flex flex-col items-center justify-center">
+      <div className="w-full max-w-sm">
+        <div className="text-center mb-8">
+          <p className="text-4xl mb-3">⚔️</p>
+          <h1 className="text-2xl font-bold text-white">토론 대결 플랫폼</h1>
+          <p className="text-muted text-sm mt-2">소셜 계정으로 시작하세요</p>
+        </div>
 
-      <div className="flex flex-col gap-3 w-72">
-        <a
-          href={getGoogleLoginUrl()}
-          className="flex items-center justify-center gap-3 px-6 py-3 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 transition-colors font-medium text-gray-700"
-        >
-          <GoogleIcon />
-          Google로 시작하기
-        </a>
+        <div className="bg-surface border border-border rounded-xl p-6 space-y-3">
+          <a
+            href={getGoogleLoginUrl()}
+            className="flex items-center justify-center gap-3 w-full px-5 py-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors font-medium text-gray-700 text-sm"
+          >
+            <GoogleIcon />
+            Google로 시작하기
+          </a>
 
-        <a
-          href={getKakaoLoginUrl()}
-          className="flex items-center justify-center gap-3 px-6 py-3 bg-yellow-300 border border-yellow-400 rounded-lg shadow-sm hover:bg-yellow-400 transition-colors font-medium text-gray-800"
-        >
-          <KakaoIcon />
-          카카오로 시작하기
-        </a>
+          <a
+            href={getKakaoLoginUrl()}
+            className="flex items-center justify-center gap-3 w-full px-5 py-3 bg-yellow-300 border border-yellow-400 rounded-xl hover:bg-yellow-400 transition-colors font-medium text-gray-800 text-sm"
+          >
+            <KakaoIcon />
+            카카오로 시작하기
+          </a>
+
+          {returnUrl && (
+            <>
+              <div className="flex items-center gap-2 my-1">
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-xs text-muted">또는</span>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+              <button
+                onClick={() => router.push(returnUrl)}
+                className="w-full px-5 py-3 border border-border rounded-xl text-sm text-muted hover:text-white hover:border-primary/50 transition-colors"
+              >
+                👀 로그인 없이 관전자로 계속하기
+              </button>
+            </>
+          )}
+        </div>
+
+        <p className="text-center text-xs text-muted mt-4">
+          관전자로 참여할 경우 로그인이 필요 없습니다
+        </p>
       </div>
-    </main>
+    </div>
   )
 }
 

@@ -9,6 +9,7 @@ import { useAuthStore } from '@/store/authStore'
 import { useDebateStore } from '@/store/useDebateStore'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
+import { CopyLinkButton } from '@/components/ui/CopyLinkButton'
 import { ChatMessage, type Message } from '@/components/debate/ChatMessage'
 import { VoteGauge } from '@/components/voting/VoteGauge'
 import { VoteSlider } from '@/components/voting/VoteSlider'
@@ -173,9 +174,15 @@ export default function DebatePage() {
             <p className="text-xs text-muted mb-1">토론 주제</p>
             <h1 className="text-base font-bold text-white leading-snug">{room.topic}</h1>
           </div>
-          <div className="flex flex-col items-end gap-1 shrink-0">
-            <Badge variant={statusBadge[roomStatus]} />
-            <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`} title={connected ? '연결됨' : '연결 끊김'} />
+          <div className="flex flex-col items-end gap-1.5 shrink-0">
+            <div className="flex items-center gap-1.5">
+              <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`} title={connected ? '연결됨' : '연결 끊김'} />
+              <Badge variant={statusBadge[roomStatus]} />
+            </div>
+            <CopyLinkButton
+              url={typeof window !== 'undefined' ? `${window.location.origin}/rooms/${roomId}` : ''}
+              label="초대 링크"
+            />
           </div>
         </div>
 
@@ -214,8 +221,27 @@ export default function DebatePage() {
 
       {/* 상태 배너 */}
       {!isActive && roomStatus === 'WAITING' && (
-        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-4 py-3 text-sm text-yellow-400 text-center mb-3 shrink-0">
-          상대방이 입장하면 토론이 시작됩니다
+        <div className="mb-3 shrink-0 space-y-2">
+          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-4 py-3 text-sm text-yellow-400 text-center">
+            상대방이 입장하면 토론이 시작됩니다
+          </div>
+          {/* 관전 중인데 빈 자리가 있으면 참가 유도 */}
+          {role === 'SPECTATOR' && (!room.proUserId || !room.conUserId) && (
+            <div className="bg-primary/10 border border-primary/20 rounded-xl px-4 py-3 flex items-center justify-between">
+              <p className="text-sm text-white">
+                {!room.proUserId && !room.conUserId
+                  ? '찬성·반대 자리가 모두 비어 있습니다'
+                  : !room.proUserId ? '찬성 자리가 비어 있습니다'
+                  : '반대 자리가 비어 있습니다'}
+              </p>
+              <button
+                onClick={() => router.push(`/rooms/${roomId}`)}
+                className="text-xs text-primary font-medium hover:text-primary/80 transition-colors shrink-0 ml-3"
+              >
+                참가하기 →
+              </button>
+            </div>
+          )}
         </div>
       )}
       {roomStatus === 'ENDED' && endResult && (

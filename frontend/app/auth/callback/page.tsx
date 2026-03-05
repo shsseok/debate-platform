@@ -30,12 +30,15 @@ export default function AuthCallbackPage() {
       nickname: payload.nickname,
     })
 
-    router.replace('/rooms')
+    // 로그인 전에 저장한 returnUrl로 돌아가기
+    const returnUrl = localStorage.getItem('returnUrl')
+    localStorage.removeItem('returnUrl')
+    router.replace(returnUrl ?? '/rooms')
   }, [searchParams, setAuth, router])
 
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <p className="text-gray-500">로그인 처리 중...</p>
+      <p className="text-muted">로그인 처리 중...</p>
     </div>
   )
 }
