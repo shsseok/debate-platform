@@ -46,4 +46,11 @@ public class RoomController {
         Long uid = (userId != null) ? Long.parseLong(userId) : null;
         return roomService.joinRoom(roomId, uid, request);
     }
+
+    @PostMapping("/{roomId}/end")
+    public RoomResponse endRoom(
+            @PathVariable Long roomId,
+            @AuthenticationPrincipal String userId) {
+        return roomService.endRoom(roomId, Long.parseLong(userId));
+    }
 }
