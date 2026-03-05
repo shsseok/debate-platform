@@ -1,21 +1,20 @@
 import { Client, IMessage } from '@stomp/stompjs'
 import SockJS from 'sockjs-client'
-import { supabase } from './supabase'
+import { useAuthStore } from '@/store/authStore'
 
 let stompClient: Client | null = null
 
-export async function connectStomp(
+export function connectStomp(
   roomId: string,
   onMessage: (msg: IMessage) => void,
   onVoteResult: (msg: IMessage) => void,
   onStatus: (msg: IMessage) => void,
-): Promise<Client> {
-  const { data: { session } } = await supabase.auth.getSession()
-  const token = session?.access_token ?? ''
+): Client {
+  const token = useAuthStore.getState().token
 
   const client = new Client({
     webSocketFactory: () => new SockJS(`${process.env.NEXT_PUBLIC_WS_URL}/ws`),
-    connectHeaders: { Authorization: `Bearer ${token}` },
+    connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
     onConnect: () => {
       client.subscribe(`/sub/debate/${roomId}/message`, onMessage)
       client.subscribe(`/sub/debate/${roomId}/vote-result`, onVoteResult)
