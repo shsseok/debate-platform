@@ -10,6 +10,8 @@ import { useDebateStore } from '@/store/useDebateStore'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { ChatMessage, type Message } from '@/components/debate/ChatMessage'
+import { VoteGauge } from '@/components/voting/VoteGauge'
+import { VoteSlider } from '@/components/voting/VoteSlider'
 
 interface Room {
   id: number
@@ -41,6 +43,10 @@ export default function DebatePage() {
   const [input, setInput] = useState('')
   const [connected, setConnected] = useState(false)
   const [roomStatus, setRoomStatus] = useState<Room['status']>('WAITING')
+  const [voteAverage, setVoteAverage] = useState(50)
+  const [voterCount, setVoterCount] = useState(0)
+  const [endResult, setEndResult] = useState<{ winner: string; voteAverage: number } | null>(null)
+  const [ending, setEnding] = useState(false)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -86,10 +92,17 @@ export default function DebatePage() {
         const data: Message = JSON.parse(msg.body)
         setMessages((prev) => [...prev, data])
       },
-      () => {},
+      (msg: IMessage) => {
+        const data = JSON.parse(msg.body)
+        setVoteAverage(data.average ?? 50)
+        setVoterCount(data.voterCount ?? 0)
+      },
       (msg: IMessage) => {
         const data = JSON.parse(msg.body)
         if (data.status) setRoomStatus(data.status)
+        if (data.status === 'ENDED') {
+          setEndResult({ winner: data.winner, voteAverage: data.voteAverage ?? 50 })
+        }
       }
     )
 
@@ -131,6 +144,17 @@ export default function DebatePage() {
 
   const canSpeak = role === 'PRO' || role === 'CON'
   const isActive = roomStatus === 'ACTIVE'
+
+  const handleEndRoom = async () => {
+    if (!confirm('정말 토론을 종료하시겠습니까?')) return
+    setEnding(true)
+    try {
+      await api.post(`/rooms/${roomId}/end`)
+    } catch (err: any) {
+      alert(err.response?.data?.message ?? '종료에 실패했습니다.')
+      setEnding(false)
+    }
+  }
 
   if (!room) {
     return (
@@ -179,6 +203,13 @@ export default function DebatePage() {
             </span>
           </div>
         </div>
+
+        {/* 실시간 여론 게이지 (컴팩트) */}
+        {isActive && (
+          <div className="mt-3">
+            <VoteGauge average={voteAverage} voterCount={voterCount} compact />
+          </div>
+        )}
       </div>
 
       {/* 상태 배너 */}
@@ -187,7 +218,22 @@ export default function DebatePage() {
           상대방이 입장하면 토론이 시작됩니다
         </div>
       )}
-      {roomStatus === 'ENDED' && (
+      {roomStatus === 'ENDED' && endResult && (
+        <div className="bg-surface border border-border rounded-xl p-4 mb-3 shrink-0">
+          <p className="text-center text-sm font-semibold text-white mb-3">토론 결과</p>
+          <div className="text-center mb-3">
+            <span className={`text-2xl font-bold ${
+              endResult.winner === 'PRO' ? 'text-pro' :
+              endResult.winner === 'CON' ? 'text-con' : 'text-muted'
+            }`}>
+              {endResult.winner === 'PRO' ? '찬성 승리' :
+               endResult.winner === 'CON' ? '반대 승리' : '무승부'}
+            </span>
+          </div>
+          <VoteGauge average={endResult.voteAverage} voterCount={voterCount} />
+        </div>
+      )}
+      {roomStatus === 'ENDED' && !endResult && (
         <div className="bg-muted/10 border border-border rounded-xl px-4 py-3 text-sm text-muted text-center mb-3 shrink-0">
           토론이 종료되었습니다
         </div>
@@ -211,39 +257,61 @@ export default function DebatePage() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 입력창 */}
+      {/* 관전자 투표 슬라이더 */}
+      {role === 'SPECTATOR' && isActive && (
+        <div className="mb-3 shrink-0">
+          <VoteSlider roomId={roomId} />
+        </div>
+      )}
+
+      {/* 입력창 + 종료 버튼 */}
       {canSpeak ? (
-        <div className="bg-surface border border-border rounded-xl p-3 shrink-0">
+        <div className="bg-surface border border-border rounded-xl p-3 shrink-0 space-y-2">
           {!isActive ? (
             <p className="text-center text-sm text-muted py-2">토론이 시작되면 발언할 수 있습니다</p>
           ) : (
-            <div className="flex gap-2 items-end">
-              <div className={`w-2 h-2 rounded-full mb-3 shrink-0 ${role === 'PRO' ? 'bg-pro' : 'bg-con'}`} />
-              <textarea
-                ref={textareaRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={`${role === 'PRO' ? '찬성' : '반대'} 측 발언을 입력하세요... (Enter로 전송, Shift+Enter 줄바꿈)`}
-                rows={2}
-                maxLength={1000}
-                className="flex-1 bg-background border border-border rounded-xl px-3 py-2 text-sm text-white placeholder-muted resize-none focus:outline-none focus:border-primary transition-colors"
-              />
-              <Button
-                onClick={handleSend}
-                disabled={!input.trim() || !connected}
-                variant={role === 'PRO' ? 'pro' : 'con'}
-                className="shrink-0"
-              >
-                전송
-              </Button>
-            </div>
+            <>
+              <div className="flex gap-2 items-end">
+                <div className={`w-2 h-2 rounded-full mb-3 shrink-0 ${role === 'PRO' ? 'bg-pro' : 'bg-con'}`} />
+                <textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={`${role === 'PRO' ? '찬성' : '반대'} 측 발언을 입력하세요... (Enter로 전송, Shift+Enter 줄바꿈)`}
+                  rows={2}
+                  maxLength={1000}
+                  className="flex-1 bg-background border border-border rounded-xl px-3 py-2 text-sm text-white placeholder-muted resize-none focus:outline-none focus:border-primary transition-colors"
+                />
+                <Button
+                  onClick={handleSend}
+                  disabled={!input.trim() || !connected}
+                  variant={role === 'PRO' ? 'pro' : 'con'}
+                  className="shrink-0"
+                >
+                  전송
+                </Button>
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleEndRoom}
+                  disabled={ending}
+                  className="text-muted hover:text-red-400 hover:border-red-400/50"
+                >
+                  {ending ? '종료 중...' : '토론 종료'}
+                </Button>
+              </div>
+            </>
           )}
         </div>
       ) : (
-        <div className="bg-surface border border-border rounded-xl px-4 py-3 text-center text-sm text-muted shrink-0">
-          관전자는 발언할 수 없습니다
-        </div>
+        !isActive && (
+          <div className="bg-surface border border-border rounded-xl px-4 py-3 text-center text-sm text-muted shrink-0">
+            토론이 시작되기를 기다리는 중...
+          </div>
+        )
       )}
     </div>
   )
