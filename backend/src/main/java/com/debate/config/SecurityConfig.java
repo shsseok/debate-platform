@@ -45,6 +45,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/rooms", "/api/rooms/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/rooms/*/join").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/debate/*/messages").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/debate/*/result").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
