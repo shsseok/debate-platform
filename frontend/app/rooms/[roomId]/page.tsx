@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { useAuthStore } from '@/store/authStore'
 import { useDebateStore } from '@/store/useDebateStore'
+import { CopyLinkButton } from '@/components/ui/CopyLinkButton'
 
 interface Room {
   id: number
@@ -51,7 +52,9 @@ export default function RoomDetailPage() {
 
   const handleJoin = async (role: Role) => {
     if ((role === 'PRO' || role === 'CON') && !token) {
-      router.push('/login')
+      // 로그인 후 이 페이지로 돌아오도록 returnUrl 보존
+      const currentPath = `/rooms/${roomId}`
+      router.push(`/login?returnUrl=${encodeURIComponent(currentPath)}`)
       return
     }
 
@@ -103,12 +106,15 @@ export default function RoomDetailPage() {
 
   return (
     <div className="max-w-lg mx-auto">
-      <button
-        onClick={() => router.push('/rooms')}
-        className="text-muted text-sm hover:text-white transition-colors mb-6 flex items-center gap-1"
-      >
-        ← 목록으로
-      </button>
+      <div className="flex items-center justify-between mb-6">
+        <button
+          onClick={() => router.push('/rooms')}
+          className="text-muted text-sm hover:text-white transition-colors flex items-center gap-1"
+        >
+          ← 목록으로
+        </button>
+        <CopyLinkButton url={typeof window !== 'undefined' ? window.location.href : ''} label="참가 링크 복사" />
+      </div>
 
       <div className="bg-surface border border-border rounded-xl p-6 mb-6">
         <div className="flex items-start justify-between gap-3 mb-4">
