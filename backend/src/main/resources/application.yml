@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: debate-platform
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/debate}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:password}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+server:
+  port: 8080
+
+supabase:
+  jwt-secret: ${SUPABASE_JWT_SECRET}
+  url: ${SUPABASE_URL}
